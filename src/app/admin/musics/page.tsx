@@ -17,23 +17,23 @@ export default function MusicsPage() {
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [editMusicData, setEditMusicData] = useState<any>(null)
   const [isCreateMode, setIsCreateMode] = useState(false)
-  
+
   // 필터링 상태
   const [genreFilter, setGenreFilter] = useState('전체')
   const [musicTypeFilter, setMusicTypeFilter] = useState('전체')
-  
+
   // 드롭다운 필터 상태
   const [idSortFilter, setIdSortFilter] = useState('전체')
   const [releaseDateSortFilter, setReleaseDateSortFilter] = useState('전체')
   const [rewardLimitFilter, setRewardLimitFilter] = useState('전체')
-  
+
   // 정렬 상태 추가
   const [sortBy, setSortBy] = useState<string>('')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  
+
   // 드롭다운 열림/닫힘 상태
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
-  
+
 
 
   // API 연동을 위한 상태 변수들
@@ -49,8 +49,9 @@ export default function MusicsPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/musics?page=${currentPage}&limit=10&search=${searchQuery}&category=${genreFilter}&musicType=${musicTypeFilter}`)
       const data = await response.json()
-      setMusics(data.musics)
-      setTotalCount(data.totalCount || data.musics.length)
+      // console.log(data, 'asdfadsa')
+      setMusics(data.musics || [])
+      setTotalCount(data.totalCount || 0)
     } catch (error) {
       console.error('음원 조회 실패:', error)
     } finally {
@@ -68,7 +69,7 @@ export default function MusicsPage() {
     const handleClickOutside = () => {
       setOpenDropdown(null)
     }
-    
+
     document.addEventListener('click', handleClickOutside)
     return () => {
       document.removeEventListener('click', handleClickOutside)
@@ -78,7 +79,7 @@ export default function MusicsPage() {
   const handleDelete = (ids: (string | number)[]) => {
     const numericIds = ids.map(id => typeof id === 'string' ? parseInt(id) : id)
     console.log('삭제할 ID들:', ids, '→ 숫자 변환:', numericIds)
-    
+
     if (numericIds.length === 1) {
       setDeleteTarget(`음원 ID ${numericIds[0]}`)
     } else {
@@ -91,17 +92,17 @@ export default function MusicsPage() {
   const toggleDropdown = (dropdownName: string, e: React.MouseEvent) => {
     e.stopPropagation()
     const newState = openDropdown === dropdownName ? null : dropdownName
-    
+
     setTimeout(() => {
       setOpenDropdown(newState)
     }, 0)
   }
-  
+
   // 드롭다운 닫기 함수
   const closeDropdown = () => {
     setOpenDropdown(null)
   }
-  
+
   // 정렬 함수
   const handleSort = (field: string) => {
     if (sortBy === field) {
@@ -111,7 +112,7 @@ export default function MusicsPage() {
       setSortOrder('desc')
     }
   }
-  
+
   // 체크박스 선택 핸들러
   const handleSelectItem = (id: number) => {
     const newSelectedItems = new Set(selectedItems)
@@ -150,7 +151,7 @@ export default function MusicsPage() {
   const handleItemSelect = (id: string | number) => {
     const numericId = typeof id === 'string' ? parseInt(id) : id
     console.log('선택된 음원 ID:', id, '→ 숫자 변환:', numericId)
-    
+
     const newSelected = new Set(selectedItems)
     if (newSelected.has(numericId)) {
       newSelected.delete(numericId)
@@ -171,7 +172,7 @@ export default function MusicsPage() {
         },
         body: JSON.stringify({ ids })
       })
-      
+
       if (response.ok) {
         // 성공 시 선택 초기화 및 목록 새로고침
         setSelectedItems(new Set())
@@ -192,7 +193,7 @@ export default function MusicsPage() {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/musics/${id}`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
-              const mapped = {
+      const mapped = {
         id: String(data.id),
         title: data.title,
         artist: data.artist,
@@ -229,14 +230,14 @@ export default function MusicsPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="min-w-[300px]">
-            <input 
-              className="w-full px-3 py-2 text-white placeholder-white/50 outline-none border border-white/10 rounded-lg focus:border-teal-400/50 transition-colors text-sm" 
-              placeholder="음원명, 아티스트, 태그로 검색 .." 
+            <input
+              className="w-full px-3 py-2 text-white placeholder-white/50 outline-none border border-white/10 rounded-lg focus:border-teal-400/50 transition-colors text-sm"
+              placeholder="음원명, 아티스트, 태그로 검색 .."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <button 
+          <button
             onClick={fetchMusics}
             className="rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-white/90 font-medium hover:bg-white/20 hover:text-white transition-all duration-200"
           >
@@ -255,20 +256,19 @@ export default function MusicsPage() {
             음원 등록
           </button>
         </div>
-        
+
         <div className="flex items-center gap-4">
           <div className="text-sm text-white/90 font-medium">
-            총 음원: <span className="text-teal-300 font-semibold">{totalCount}</span>개 | 
+            총 음원: <span className="text-teal-300 font-semibold">{totalCount}</span>개 |
             선택됨: <span className="text-teal-300 font-semibold">{selectedItems.size}</span>개
           </div>
-          <button 
+          <button
             onClick={() => handleDelete(Array.from(selectedItems))}
             disabled={selectedItems.size === 0}
-            className={`rounded-lg border border-white/10 px-4 py-2 text-sm font-medium transition-all duration-200 ${
-              selectedItems.size === 0 
-                ? 'bg-white/5 text-white/30 cursor-not-allowed' 
+            className={`rounded-lg border border-white/10 px-4 py-2 text-sm font-medium transition-all duration-200 ${selectedItems.size === 0
+                ? 'bg-white/5 text-white/30 cursor-not-allowed'
                 : 'bg-white/5 text-white hover:bg-white/10'
-            }`}
+              }`}
           >
             일괄 삭제 ({selectedItems.size})
           </button>
@@ -283,53 +283,50 @@ export default function MusicsPage() {
             음원 목록을 불러오는 중...
           </div>
         )}
-        
+
         <div className="overflow-x-auto min-h-[400px]">
           <table className="w-full text-sm">
             <thead className="text-center">
               <tr className="border-b border-white/10">
                 <th className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={selectAll}
                     onChange={handleSelectAll}
-                    className="accent-teal-400 rounded" 
+                    className="accent-teal-400 rounded"
                   />
                 </th>
                 <th className="px-6 py-4 text-white/70 font-medium text-center">
                   <div className="relative">
-                    <button 
+                    <button
                       onClick={(e) => toggleDropdown('idSort', e)}
                       className="flex items-center justify-center gap-1 w-full text-center hover:text-white/90 transition-colors"
                     >
                       <span className={idSortFilter !== '전체' ? 'text-teal-400' : 'text-white/70'}>음원번호</span>
                       <span className={idSortFilter !== '전체' ? 'text-teal-400' : 'text-white/50'}>▼</span>
                     </button>
-                    
+
                     {openDropdown === 'idSort' && (
                       <div className="absolute top-full left-0 mt-1 bg-black/90 border border-white/20 rounded-lg shadow-xl z-[9999] min-w-[120px]">
                         <div className="py-1">
-                          <button 
+                          <button
                             onClick={() => { setIdSortFilter('전체'); closeDropdown(); }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
-                              idSortFilter === '전체' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
-                            }`}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${idSortFilter === '전체' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
+                              }`}
                           >
                             전체
                           </button>
-                          <button 
+                          <button
                             onClick={() => { setIdSortFilter('오름차순'); closeDropdown(); }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
-                              idSortFilter === '오름차순' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
-                            }`}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${idSortFilter === '오름차순' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
+                              }`}
                           >
                             오름차순
                           </button>
-                          <button 
+                          <button
                             onClick={() => { setIdSortFilter('내림차순'); closeDropdown(); }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
-                              idSortFilter === '내림차순' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
-                            }`}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${idSortFilter === '내림차순' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
+                              }`}
                           >
                             내림차순
                           </button>
@@ -342,38 +339,35 @@ export default function MusicsPage() {
                 <th className="px-6 py-4 text-white/70 font-medium text-center">아티스트</th>
                 <th className="px-6 py-4 text-white/70 font-medium text-center">
                   <div className="relative">
-                    <button 
+                    <button
                       onClick={(e) => toggleDropdown('musicType', e)}
                       className="flex items-center justify-center gap-1 w-full text-center hover:text-white/90 transition-colors"
                     >
                       <span className={musicTypeFilter !== '전체' ? 'text-teal-400' : 'text-white/70'}>음원 유형</span>
                       <span className={musicTypeFilter !== '전체' ? 'text-teal-400' : 'text-white/50'}>▼</span>
                     </button>
-                    
+
                     {openDropdown === 'musicType' && (
                       <div className="absolute top-full left-0 mt-1 bg-black/90 border border-white/20 rounded-lg shadow-xl z-[9999] min-w-[120px]">
                         <div className="py-1">
-                          <button 
+                          <button
                             onClick={() => { setMusicTypeFilter('전체'); closeDropdown(); }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
-                              musicTypeFilter === '전체' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
-                            }`}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${musicTypeFilter === '전체' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
+                              }`}
                           >
                             전체
                           </button>
-                          <button 
+                          <button
                             onClick={() => { setMusicTypeFilter('일반'); closeDropdown(); }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
-                              musicTypeFilter === '일반' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
-                            }`}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${musicTypeFilter === '일반' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
+                              }`}
                           >
                             일반
                           </button>
-                          <button 
+                          <button
                             onClick={() => { setMusicTypeFilter('Inst'); closeDropdown(); }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
-                              musicTypeFilter === 'Inst' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
-                            }`}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${musicTypeFilter === 'Inst' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
+                              }`}
                           >
                             Inst
                           </button>
@@ -384,32 +378,30 @@ export default function MusicsPage() {
                 </th>
                 <th className="px-6 py-4 text-white/70 font-medium text-center">
                   <div className="relative">
-                    <button 
+                    <button
                       onClick={(e) => toggleDropdown('category', e)}
                       className="flex items-center justify-center gap-1 w-full text-center hover:text-white/90 transition-colors"
                     >
                       <span className={genreFilter !== '전체' ? 'text-teal-400' : 'text-white/70'}>카테고리</span>
                       <span className={genreFilter !== '전체' ? 'text-teal-400' : 'text-white/50'}>▼</span>
                     </button>
-                    
+
                     {openDropdown === 'category' && (
                       <div className="absolute top-full left-0 mt-1 bg-black/90 border border-white/20 rounded-lg shadow-xl z-[9999] min-w-[120px]">
                         <div className="py-1">
-                          <button 
+                          <button
                             onClick={() => { setGenreFilter('전체'); closeDropdown(); }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
-                              genreFilter === '전체' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
-                            }`}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${genreFilter === '전체' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
+                              }`}
                           >
                             전체
                           </button>
                           {['Pop', 'Rock', 'Jazz', 'Classical'].map((genre) => (
-                            <button 
+                            <button
                               key={genre}
                               onClick={() => { setGenreFilter(genre); closeDropdown(); }}
-                              className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
-                                genreFilter === genre ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
-                              }`}
+                              className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${genreFilter === genre ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
+                                }`}
                             >
                               {genre}
                             </button>
@@ -422,38 +414,35 @@ export default function MusicsPage() {
                 <th className="px-6 py-4 text-white/70 font-medium text-center">태그</th>
                 <th className="px-6 py-4 text-white/70 font-medium text-center">
                   <div className="relative">
-                    <button 
+                    <button
                       onClick={(e) => toggleDropdown('releaseDate', e)}
                       className="flex items-center justify-center gap-1 w-full text-center hover:text-white/90 transition-colors"
                     >
                       <span className={releaseDateSortFilter !== '전체' ? 'text-teal-400' : 'text-white/70'}>발매일</span>
                       <span className={releaseDateSortFilter !== '전체' ? 'text-teal-400' : 'text-white/50'}>▼</span>
                     </button>
-                    
+
                     {openDropdown === 'releaseDate' && (
                       <div className="absolute top-full left-0 mt-1 bg-black/90 border border-white/20 rounded-lg shadow-xl z-[9999] min-w-[120px]">
                         <div className="py-1">
-                          <button 
+                          <button
                             onClick={() => { setReleaseDateSortFilter('전체'); closeDropdown(); }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
-                              releaseDateSortFilter === '전체' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
-                            }`}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${releaseDateSortFilter === '전체' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
+                              }`}
                           >
                             전체
                           </button>
-                          <button 
+                          <button
                             onClick={() => { setReleaseDateSortFilter('오름차순'); closeDropdown(); }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
-                              releaseDateSortFilter === '오름차순' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
-                            }`}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${releaseDateSortFilter === '오름차순' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
+                              }`}
                           >
                             오름차순
                           </button>
-                          <button 
+                          <button
                             onClick={() => { setReleaseDateSortFilter('내림차순'); closeDropdown(); }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
-                              releaseDateSortFilter === '내림차순' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
-                            }`}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${releaseDateSortFilter === '내림차순' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
+                              }`}
                           >
                             내림차순
                           </button>
@@ -464,38 +453,35 @@ export default function MusicsPage() {
                 </th>
                 <th className="px-6 py-4 text-white/70 font-medium text-center">
                   <div className="relative">
-                    <button 
+                    <button
                       onClick={(e) => toggleDropdown('rewardLimit', e)}
                       className="flex items-center justify-center gap-1 w-full text-center hover:text-white/90 transition-colors"
                     >
                       <span className={rewardLimitFilter !== '전체' ? 'text-teal-400' : 'text-white/70'}>월 최대 리워드 한도</span>
                       <span className={rewardLimitFilter !== '전체' ? 'text-teal-400' : 'text-white/50'}>▼</span>
                     </button>
-                    
+
                     {openDropdown === 'rewardLimit' && (
                       <div className="absolute top-full left-0 mt-1 bg-black/90 border border-white/20 rounded-lg shadow-xl z-[9999] min-w-[120px]">
                         <div className="py-1">
-                          <button 
+                          <button
                             onClick={() => { setRewardLimitFilter('전체'); closeDropdown(); }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
-                              rewardLimitFilter === '전체' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
-                            }`}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${rewardLimitFilter === '전체' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
+                              }`}
                           >
                             전체
                           </button>
-                          <button 
+                          <button
                             onClick={() => { setRewardLimitFilter('오름차순'); closeDropdown(); }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
-                              rewardLimitFilter === '오름차순' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
-                            }`}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${rewardLimitFilter === '오름차순' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
+                              }`}
                           >
                             오름차순
                           </button>
-                          <button 
+                          <button
                             onClick={() => { setRewardLimitFilter('내림차순'); closeDropdown(); }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
-                              rewardLimitFilter === '내림차순' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
-                            }`}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${rewardLimitFilter === '내림차순' ? 'text-teal-300 bg-white/5' : 'text-white/90 font-medium'
+                              }`}
                           >
                             내림차순
                           </button>
@@ -511,7 +497,7 @@ export default function MusicsPage() {
               {React.useMemo(() => {
                 // 디버깅: 실제 API 응답 데이터 구조 확인
                 console.log('API 응답 데이터:', musics)
-                
+
                 // 필터링 + 정렬된 데이터 생성
                 let filteredData = musics.map((item, index) => {
                   return {
@@ -526,14 +512,14 @@ export default function MusicsPage() {
                     maxRewardLimit: `${item.maxrewardlimit}토큰`,   // 월 최대 리워드 한도 (maxrewardlimit 필드 사용)
                   }
                 })
-                
+
                 // 필터링
                 filteredData = filteredData.filter(item => {
                   if (genreFilter !== '전체' && item.genre !== genreFilter) return false
                   if (musicTypeFilter !== '전체' && item.musicType !== musicTypeFilter) return false
                   return true
                 })
-                
+
                 // 기본 정렬: 음원번호 오름차순
                 if (!sortBy && !sortOrder) {
                   filteredData.sort((a, b) => a.id - b.id)
@@ -577,7 +563,7 @@ export default function MusicsPage() {
                   filteredData.sort((a, b) => {
                     let aVal = a[sortBy as keyof typeof a]
                     let bVal = b[sortBy as keyof typeof b]
-                    
+
                     if (typeof aVal === 'string' && typeof bVal === 'string') {
                       return sortOrder === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal)
                     }
@@ -591,153 +577,152 @@ export default function MusicsPage() {
                 else {
                   filteredData.sort((a, b) => a.id - b.id)
                 }
-                
+
                 return filteredData
               }, [genreFilter, musicTypeFilter, sortBy, sortOrder, idSortFilter, releaseDateSortFilter, rewardLimitFilter, musics]).map((item) => {
                 return (
-                  <tr 
-                    key={item.index} 
-                    className={`border-b border-white/5 transition-all duration-200 cursor-pointer ${
-                      item.index % 2 === 0 ? 'bg-white/2' : 'bg-white/1'
-                    } hover:bg-white/8`}
+                  <tr
+                    key={item.index}
+                    className={`border-b border-white/5 transition-all duration-200 cursor-pointer ${item.index % 2 === 0 ? 'bg-white/2' : 'bg-white/1'
+                      } hover:bg-white/8`}
                     onClick={async () => {
                       setStatsTitle(item.title)
                       try {
-                                                 const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/musics/${item.id}`)
-                         const data = await res.json()
-                         setStatsMusicData({
-                           id: String(data.id),
-                           title: data.title,
-                           artist: data.artist,
-                           category: data.category,
-                           genre: undefined,
-                           tags: data.tags,
-                           normalizedTags: data.normalizedTags,
-                           releaseDate: data.releaseDate,
-                           durationSec: data.durationSec,
-                           musicType: data.musicType,
-                           isrc: data.isrc,
-                           createdAt: data.createdAt,
-                           lyricsText: data.lyricsText,
-                           lyricsFilePath: data.lyricsFilePath,
-                           lyricist: data.lyricist,
-                           composer: data.composer,
-                           arranger: data.arranger,
-                           priceMusicOnly: data.priceMusicOnly,
-                           priceLyricsOnly: data.priceLyricsOnly,
-                           rewardPerPlay: data.rewardPerPlay,
-                           maxPlayCount: data.maxPlayCount,
-                           accessTier: data.accessTier
-                         })
+                        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/musics/${item.id}`)
+                        const data = await res.json()
+                        setStatsMusicData({
+                          id: String(data.id),
+                          title: data.title,
+                          artist: data.artist,
+                          category: data.category,
+                          genre: undefined,
+                          tags: data.tags,
+                          normalizedTags: data.normalizedTags,
+                          releaseDate: data.releaseDate,
+                          durationSec: data.durationSec,
+                          musicType: data.musicType,
+                          isrc: data.isrc,
+                          createdAt: data.createdAt,
+                          lyricsText: data.lyricsText,
+                          lyricsFilePath: data.lyricsFilePath,
+                          lyricist: data.lyricist,
+                          composer: data.composer,
+                          arranger: data.arranger,
+                          priceMusicOnly: data.priceMusicOnly,
+                          priceLyricsOnly: data.priceLyricsOnly,
+                          rewardPerPlay: data.rewardPerPlay,
+                          maxPlayCount: data.maxPlayCount,
+                          accessTier: data.accessTier
+                        })
                         setStatsOpen(true)
                       } catch (e) {
                         console.error('상세 조회 실패', e)
                       }
                     }}
                   >
-                  <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                    <div onClick={(e) => e.stopPropagation()}>
-                    <input 
-                      type="checkbox" 
+                    <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
                           checked={selectedItems.has(typeof item.id === 'string' ? parseInt(item.id) : item.id)}
-                                                  onChange={(e) => {
-                          e.stopPropagation()
-                          handleItemSelect(item.id)
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                        }}
-                      className="accent-teal-400 rounded" 
-                    />
-                    </div>
-                  </td>
+                          onChange={(e) => {
+                            e.stopPropagation()
+                            handleItemSelect(item.id)
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                          }}
+                          className="accent-teal-400 rounded"
+                        />
+                      </div>
+                    </td>
 
-                  <td className="px-6 py-4 text-center">
-                    <div className="font-semibold text-white">{item.id}</div>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="font-semibold text-white">{item.title}</div>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="text-white/90 font-medium">{item.artist}</div>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium ${
-                      item.musicType === 'Inst' 
-                        ? 'bg-blue-500/20 text-blue-400' 
-                        : 'bg-purple-500/20 text-purple-400'
-                    }`}>
-                      {item.musicType}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-gray-500/20 text-gray-400">
-                      {item.genre}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-white/90 font-medium text-center">{item.tags}</td>
-                  <td className="px-6 py-4 text-white/90 font-medium text-center">{item.releaseDate}</td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="text-teal-400 font-medium">
-                      {item.maxRewardLimit}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex gap-2 justify-center">
-                      <button 
-                        className="rounded-lg bg-gradient-to-r from-teal-500 to-teal-600 px-3 py-1.5 text-xs text-white font-medium hover:from-teal-600 hover:to-teal-700 transition-all duration-200"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleEdit(item.id)
-                        }}
-                      >
-                        수정
-                      </button>
-                      <button 
-                        className="rounded-lg bg-gradient-to-r from-teal-500 to-teal-600 px-3 py-1.5 text-xs text-white font-medium hover:from-teal-600 hover:to-teal-700 transition-all duration-200" 
-                        onClick={async (e) => {
-                          e.stopPropagation()
-                          setStatsTitle(item.title)
-                          try {
-                            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/musics/${item.id}`)
-                            if (!res.ok) throw new Error(`HTTP ${res.status}`)
-                            const data = await res.json()
-                            setStatsMusicData({
-                              id: String(data.id),
-                              title: data.title,
-                              artist: data.artist,
-                              category: data.category,
-                              genre: undefined,
-                              tags: data.tags,
-                              normalizedTags: data.normalizedTags,
-                              releaseDate: data.releaseDate,
-                              durationSec: data.durationSec,
-                              musicType: data.musicType,
-                              isrc: data.isrc,
-                              createdAt: data.createdAt,
-                              lyricsText: data.lyricsText,
-                              lyricsFilePath: data.lyricsFilePath,
-                              lyricist: data.lyricist,
-                              composer: data.composer,
-                              arranger: data.arranger,
-                              priceMusicOnly: data.priceMusicOnly,
-                              priceLyricsOnly: data.priceLyricsOnly,
-                              rewardPerPlay: data.rewardPerPlay,
-                              maxPlayCount: data.maxPlayCount,
-                              accessTier: data.accessTier
-                            })
-                            setStatsOpen(true)
-                          } catch (err) {
-                            console.error('상세 조회 실패', err)
-                          }
-                        }}
-                      >
-                        상세
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )})}
+                    <td className="px-6 py-4 text-center">
+                      <div className="font-semibold text-white">{item.id}</div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="font-semibold text-white">{item.title}</div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="text-white/90 font-medium">{item.artist}</div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium ${item.musicType === 'Inst'
+                          ? 'bg-blue-500/20 text-blue-400'
+                          : 'bg-purple-500/20 text-purple-400'
+                        }`}>
+                        {item.musicType}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-gray-500/20 text-gray-400">
+                        {item.genre}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-white/90 font-medium text-center">{item.tags}</td>
+                    <td className="px-6 py-4 text-white/90 font-medium text-center">{item.releaseDate}</td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="text-teal-400 font-medium">
+                        {item.maxRewardLimit}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex gap-2 justify-center">
+                        <button
+                          className="rounded-lg bg-gradient-to-r from-teal-500 to-teal-600 px-3 py-1.5 text-xs text-white font-medium hover:from-teal-600 hover:to-teal-700 transition-all duration-200"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleEdit(item.id)
+                          }}
+                        >
+                          수정
+                        </button>
+                        <button
+                          className="rounded-lg bg-gradient-to-r from-teal-500 to-teal-600 px-3 py-1.5 text-xs text-white font-medium hover:from-teal-600 hover:to-teal-700 transition-all duration-200"
+                          onClick={async (e) => {
+                            e.stopPropagation()
+                            setStatsTitle(item.title)
+                            try {
+                              const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/musics/${item.id}`)
+                              if (!res.ok) throw new Error(`HTTP ${res.status}`)
+                              const data = await res.json()
+                              setStatsMusicData({
+                                id: String(data.id),
+                                title: data.title,
+                                artist: data.artist,
+                                category: data.category,
+                                genre: undefined,
+                                tags: data.tags,
+                                normalizedTags: data.normalizedTags,
+                                releaseDate: data.releaseDate,
+                                durationSec: data.durationSec,
+                                musicType: data.musicType,
+                                isrc: data.isrc,
+                                createdAt: data.createdAt,
+                                lyricsText: data.lyricsText,
+                                lyricsFilePath: data.lyricsFilePath,
+                                lyricist: data.lyricist,
+                                composer: data.composer,
+                                arranger: data.arranger,
+                                priceMusicOnly: data.priceMusicOnly,
+                                priceLyricsOnly: data.priceLyricsOnly,
+                                rewardPerPlay: data.rewardPerPlay,
+                                maxPlayCount: data.maxPlayCount,
+                                accessTier: data.accessTier
+                              })
+                              setStatsOpen(true)
+                            } catch (err) {
+                              console.error('상세 조회 실패', err)
+                            }
+                          }}
+                        >
+                          상세
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -771,15 +756,15 @@ export default function MusicsPage() {
       </div>
 
       {/* 통계 모달 */}
-      <MusicStatsModal open={statsOpen} onClose={()=>setStatsOpen(false)} title={statsTitle} musicData={statsMusicData} />
+      <MusicStatsModal open={statsOpen} onClose={() => setStatsOpen(false)} title={statsTitle} musicData={statsMusicData} />
 
       {/* 수정/등록 모달 */}
-      <MusicEditModal 
-        open={editModalOpen} 
+      <MusicEditModal
+        open={editModalOpen}
         onClose={() => {
           setEditModalOpen(false)
           setIsCreateMode(false)
-        }} 
+        }}
         musicData={editMusicData}
         isCreateMode={isCreateMode}
       />
@@ -800,15 +785,15 @@ export default function MusicsPage() {
               </p>
               <p className="mt-2 text-xs text-teal-400">이 작업은 되돌릴 수 없습니다.</p>
             </div>
-            
+
             <div className="flex gap-3">
-              <button 
+              <button
                 onClick={() => setDeleteModalOpen(false)}
                 className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white font-medium hover:bg-white/10 transition-all duration-200"
               >
                 취소
               </button>
-              <button 
+              <button
                 onClick={confirmDelete}
                 className="flex-1 rounded-lg bg-gradient-to-r from-teal-500 to-teal-600 px-4 py-2.5 text-sm text-white font-medium hover:from-teal-600 hover:to-teal-700 transition-all duration-200"
               >
